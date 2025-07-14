@@ -1,0 +1,10 @@
+libcairo2
+libcairo2-dev
+libjpeg-turbo8
+libjpeg-dev
+libpango1.0-0
+libpango1.0-dev
+libgif7
+libgif-dev
+libpng16-16
+libpng-dev
