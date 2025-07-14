@@ -371,6 +371,9 @@ client.on(Events.InteractionCreate, async interaction => {
         return;
     }
 
+
+});
+
     // أزرار الهوية
     if (interaction.isButton()) {
         const userId = interaction.user.id;
