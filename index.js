@@ -332,6 +332,22 @@ function buildStepButtons(data) {
 client.on(Events.InteractionCreate, async interaction => {
     console.log('Interaction received:', interaction.type, interaction.customId || interaction.commandName);
 
+        // استقبال القوائم المنسدلة
+        if (interaction.isStringSelectMenu()) {
+            const userId = interaction.user.id;
+            
+            // المطورين يمكنهم استخدام جميع الأوامر حتى لو كان البوت متوقف
+            if (!OWNER_IDS.includes(interaction.user.id)) {
+                // التحقق من حالة البوت
+                if (isBotOffline(interaction.guildId)) {
+                    await interaction.reply({ 
+                        content: '❌ البوت حالياً متوقف من قبل المطورين يرجى التواصل مع أحد المطورين <@1337512375355707412> <@1070609053065154631> <@1291805249815711826>', 
+                        ephemeral: true 
+                    });
+                    return;
+                }
+            }
+
 
    // استقبال مودال الاسم الكامل
    if (interaction.type === InteractionType.ModalSubmit && interaction.customId === 'modal_full_name') {
@@ -605,22 +621,6 @@ client.on(Events.InteractionCreate, async interaction => {
         await interaction.update({ embeds: [embed], components: components });
     }
 });
-
-    // استقبال القوائم المنسدلة
-    if (interaction.isStringSelectMenu()) {
-        const userId = interaction.user.id;
-        
-        // المطورين يمكنهم استخدام جميع الأوامر حتى لو كان البوت متوقف
-        if (!OWNER_IDS.includes(interaction.user.id)) {
-            // التحقق من حالة البوت
-            if (isBotOffline(interaction.guildId)) {
-                await interaction.reply({ 
-                    content: '❌ البوت حالياً متوقف من قبل المطورين يرجى التواصل مع أحد المطورين <@1337512375355707412> <@1070609053065154631> <@1291805249815711826>', 
-                    ephemeral: true 
-                });
-                return;
-            }
-        }
         
         const data = userData.get(userId) || {};
         
