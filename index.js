@@ -332,6 +332,33 @@ function buildStepButtons(data) {
 client.on(Events.InteractionCreate, async interaction => {
     console.log('Interaction received:', interaction.type, interaction.customId || interaction.commandName);
 
+
+   // استقبال مودال الاسم الكامل
+   if (interaction.type === InteractionType.ModalSubmit && interaction.customId === 'modal_full_name') {
+    const userId = interaction.user.id;
+    
+    // المطورين يمكنهم استخدام جميع الأوامر حتى لو كان البوت متوقف
+    if (!OWNER_IDS.includes(interaction.user.id)) {
+        // التحقق من حالة البوت
+        if (isBotOffline(interaction.guildId)) {
+            await interaction.reply({ 
+                content: '❌ البوت حالياً متوقف من قبل المطورين يرجى التواصل مع أحد المطورين <@1337512375355707412> <@1070609053065154631> <@1291805249815711826>', 
+                ephemeral: true 
+            });
+            return;
+        }
+    }
+    
+    const data = userData.get(userId) || {};
+    data.fullName = interaction.fields.getTextInputValue('full_name');
+    userData.set(userId, data);
+    await interaction.reply({
+        content: 'أكمل الخطوة التالية:',
+        ephemeral: true,
+        components: [buildStepButtons(data)]
+    });
+    return;
+}
  // استقبال مودال تعديل الهوية
  if (interaction.type === InteractionType.ModalSubmit && interaction.customId === 'edit_identity_modal') {
     const userId = interaction.user.id;
@@ -578,33 +605,6 @@ client.on(Events.InteractionCreate, async interaction => {
         await interaction.update({ embeds: [embed], components: components });
     }
 });
-
-    // استقبال مودال الاسم الكامل
-    if (interaction.type === InteractionType.ModalSubmit && interaction.customId === 'modal_full_name') {
-        const userId = interaction.user.id;
-        
-        // المطورين يمكنهم استخدام جميع الأوامر حتى لو كان البوت متوقف
-        if (!OWNER_IDS.includes(interaction.user.id)) {
-            // التحقق من حالة البوت
-            if (isBotOffline(interaction.guildId)) {
-                await interaction.reply({ 
-                    content: '❌ البوت حالياً متوقف من قبل المطورين يرجى التواصل مع أحد المطورين <@1337512375355707412> <@1070609053065154631> <@1291805249815711826>', 
-                    ephemeral: true 
-                });
-                return;
-            }
-        }
-        
-        const data = userData.get(userId) || {};
-        data.fullName = interaction.fields.getTextInputValue('full_name');
-        userData.set(userId, data);
-        await interaction.reply({
-            content: 'أكمل الخطوة التالية:',
-            ephemeral: true,
-            components: [buildStepButtons(data)]
-        });
-        return;
-    }
 
     // استقبال القوائم المنسدلة
     if (interaction.isStringSelectMenu()) {
