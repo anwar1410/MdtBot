@@ -331,6 +331,77 @@ function buildStepButtons(data) {
 // التعامل مع الأحداث
 client.on(Events.InteractionCreate, async interaction => {
     console.log('Interaction received:', interaction.type, interaction.customId || interaction.commandName);
+
+ // استقبال مودال تعديل الهوية
+ if (interaction.type === InteractionType.ModalSubmit && interaction.customId === 'edit_identity_modal') {
+    const userId = interaction.user.id;
+    const userDataEntry = userData.get(userId);
+    
+    if (!userDataEntry || !userDataEntry.editingMode) {
+        await interaction.reply({ content: '❌ خطأ في عملية التعديل.', ephemeral: true });
+        return;
+    }
+    
+    const fullName = interaction.fields.getTextInputValue('edit_full_name');
+    const gender = interaction.fields.getTextInputValue('edit_gender');
+    const city = interaction.fields.getTextInputValue('edit_city');
+    const birthdate = interaction.fields.getTextInputValue('edit_birthdate');
+    
+    // تحليل تاريخ الميلاد
+    const birthdateParts = birthdate.split('/');
+    if (birthdateParts.length !== 3) {
+        await interaction.reply({ content: '❌ تنسيق تاريخ الميلاد غير صحيح. استخدم: يوم/شهر/سنة', ephemeral: true });
+        return;
+    }
+    
+    const [day, month, year] = birthdateParts;
+    
+    // تحديث الهوية
+    const nationalId = userDataEntry.editingNationalId;
+    const oldIdentity = { ...identities[nationalId] };
+    identities[nationalId] = {
+        ...identities[nationalId],
+        fullName,
+        gender,
+        city,
+        day,
+        month,
+        year
+    };
+    
+    saveIdentities(identities);
+    
+    // إرسال لوق التعديل
+    const logChannel = config.logChannelId && interaction.guild.channels.cache.get(config.logChannelId);
+    if (logChannel) {
+        const embed = new EmbedBuilder()
+            .setTitle('تعديل هوية')
+            .setColor('#3498db')
+            .setDescription(`تم تعديل هوية بواسطة <@${userId}>`)
+            .addFields(
+                { name: 'الاسم القديم', value: oldIdentity.fullName, inline: true },
+                { name: 'الاسم الجديد', value: fullName, inline: true },
+                { name: 'الجنس القديم', value: oldIdentity.gender, inline: true },
+                { name: 'الجنس الجديد', value: gender, inline: true },
+                { name: 'المدينة القديمة', value: oldIdentity.city, inline: true },
+                { name: 'المدينة الجديدة', value: city, inline: true },
+                { name: 'تاريخ الميلاد القديم', value: `${oldIdentity.day.padStart(2, '0')}/${convertArabicMonthToNumber(oldIdentity.month)}/${oldIdentity.year}`, inline: true },
+                { name: 'تاريخ الميلاد الجديد', value: `${day.padStart(2, '0')}/${convertArabicMonthToNumber(month)}/${year}`, inline: true },
+                { name: 'الرقم الوطني', value: nationalId, inline: false }
+            )
+            .setTimestamp();
+        logChannel.send({ embeds: [embed] });
+    }
+    
+    // إزالة بيانات التعديل
+    userData.delete(userId);
+    
+    await interaction.reply({ 
+        content: `✅ تم تعديل هوية **${fullName}** بنجاح!`, 
+        ephemeral: true 
+    });
+    return;
+}   
     
     // أمر /هوية (Admins only)
     if (interaction.type === InteractionType.ApplicationCommand && interaction.commandName === 'هوية') {
@@ -507,77 +578,6 @@ client.on(Events.InteractionCreate, async interaction => {
         await interaction.update({ embeds: [embed], components: components });
     }
 });
-
-    // استقبال مودال تعديل الهوية
-    if (interaction.type === InteractionType.ModalSubmit && interaction.customId === 'edit_identity_modal') {
-        const userId = interaction.user.id;
-        const userDataEntry = userData.get(userId);
-        
-        if (!userDataEntry || !userDataEntry.editingMode) {
-            await interaction.reply({ content: '❌ خطأ في عملية التعديل.', ephemeral: true });
-            return;
-        }
-        
-        const fullName = interaction.fields.getTextInputValue('edit_full_name');
-        const gender = interaction.fields.getTextInputValue('edit_gender');
-        const city = interaction.fields.getTextInputValue('edit_city');
-        const birthdate = interaction.fields.getTextInputValue('edit_birthdate');
-        
-        // تحليل تاريخ الميلاد
-        const birthdateParts = birthdate.split('/');
-        if (birthdateParts.length !== 3) {
-            await interaction.reply({ content: '❌ تنسيق تاريخ الميلاد غير صحيح. استخدم: يوم/شهر/سنة', ephemeral: true });
-            return;
-        }
-        
-        const [day, month, year] = birthdateParts;
-        
-        // تحديث الهوية
-        const nationalId = userDataEntry.editingNationalId;
-        const oldIdentity = { ...identities[nationalId] };
-        identities[nationalId] = {
-            ...identities[nationalId],
-            fullName,
-            gender,
-            city,
-            day,
-            month,
-            year
-        };
-        
-        saveIdentities(identities);
-        
-        // إرسال لوق التعديل
-        const logChannel = config.logChannelId && interaction.guild.channels.cache.get(config.logChannelId);
-        if (logChannel) {
-            const embed = new EmbedBuilder()
-                .setTitle('تعديل هوية')
-                .setColor('#3498db')
-                .setDescription(`تم تعديل هوية بواسطة <@${userId}>`)
-                .addFields(
-                    { name: 'الاسم القديم', value: oldIdentity.fullName, inline: true },
-                    { name: 'الاسم الجديد', value: fullName, inline: true },
-                    { name: 'الجنس القديم', value: oldIdentity.gender, inline: true },
-                    { name: 'الجنس الجديد', value: gender, inline: true },
-                    { name: 'المدينة القديمة', value: oldIdentity.city, inline: true },
-                    { name: 'المدينة الجديدة', value: city, inline: true },
-                    { name: 'تاريخ الميلاد القديم', value: `${oldIdentity.day.padStart(2, '0')}/${convertArabicMonthToNumber(oldIdentity.month)}/${oldIdentity.year}`, inline: true },
-                    { name: 'تاريخ الميلاد الجديد', value: `${day.padStart(2, '0')}/${convertArabicMonthToNumber(month)}/${year}`, inline: true },
-                    { name: 'الرقم الوطني', value: nationalId, inline: false }
-                )
-                .setTimestamp();
-            logChannel.send({ embeds: [embed] });
-        }
-        
-        // إزالة بيانات التعديل
-        userData.delete(userId);
-        
-        await interaction.reply({ 
-            content: `✅ تم تعديل هوية **${fullName}** بنجاح!`, 
-            ephemeral: true 
-        });
-        return;
-    }
 
     // استقبال مودال الاسم الكامل
     if (interaction.type === InteractionType.ModalSubmit && interaction.customId === 'modal_full_name') {
@@ -2193,7 +2193,7 @@ client.on(Events.InteractionCreate, async interaction => {
         // إرسال لوق إلى قناة لوق الجرائم إذا كانت معرفة
         if (config.crimesLogChannelId) {
             const logChannel = interaction.guild.channels.cache.get(config.crimesLogChannelId);
-            if (logChannel) {
+        if (logChannel) {
                 const logEmbed = new EmbedBuilder()
                     .setTitle('تغيير حالة الجريمة')
                     .setDescription(`تم تغيير حالة الجريمة للشخص **${identities[nationalId].fullName}** إلى: ${selectedCrime.executed ? '✅ منفذة' : '❌ غير منفذة'}`)
@@ -2211,7 +2211,7 @@ client.on(Events.InteractionCreate, async interaction => {
         }
         // إنشاء embed محدث مع معلومات الجريمة
         const identity = identities[nationalId];
-        const embed = new EmbedBuilder()
+            const embed = new EmbedBuilder()
             .setTitle(`🔧 إدارة الجريمة - ${identity.fullName}`)
             .setColor('#e74c3c')
             .setImage(getCustomImage(interaction.guildId))
@@ -3599,8 +3599,8 @@ client.on(Events.InteractionCreate, async interaction => {
             content: `✅ تم حذف المخالفة **${selectedViolation.title}** من **${identities[nationalId].fullName}** بنجاح!`, 
             ephemeral: true 
         });
-                return;
-            }
+        return;
+    }
             
     // التعامل مع اختيار مخالفة للتعديل
     if (interaction.isStringSelectMenu() && interaction.customId.startsWith('select_violation_to_edit_')) {
