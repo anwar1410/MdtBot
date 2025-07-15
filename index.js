@@ -371,190 +371,142 @@ client.on(Events.InteractionCreate, async interaction => {
         return;
     }
 
-
-});
-
     // أزرار الهوية
     if (interaction.isButton()) {
         const userId = interaction.user.id;
-        
-        // المطورين يمكنهم استخدام جميع الأوامر حتى لو كان البوت متوقف
-        if (!OWNER_IDS.includes(interaction.user.id)) {
-            // التحقق من حالة البوت
-            if (isBotOffline(interaction.guildId)) {
-                await interaction.reply({ 
-                    content: '❌ البوت حالياً متوقف من قبل المطورين يرجى التواصل مع أحد المطورين <@1337512375355707412> <@1070609053065154631> <@1291805249815711826>', 
-                    ephemeral: true 
-                });
-                return;
-            }
-        }
-        
-        // تحقق فقط إذا كان الزر من أزرار إنشاء الهوية للمستخدم
-        const creationButtons = [
-            'set_full_name', 'set_gender', 'set_city', 'set_birthdate', 'finish_identity'
-        ];
-        if (creationButtons.includes(interaction.customId)) {
-            const hasIdentity = Object.values(identities).some(id => id.userId === userId);
-            if (hasIdentity) {
-                await interaction.reply({
-                    content: 'لديك هوية بالفعل، لا يمكن إنشاء هوية أخرى أو تعديل على الهوية.',
-                    ephemeral: true
-                });
-                return;
-            }
-        }
-        
-        const data = userData.get(userId) || { fullName: null, gender: null, city: null, year: null, month: null, day: null };
+        const data = userData.get(userId) || {};
         
         if (interaction.customId === 'set_full_name') {
             const modal = new ModalBuilder()
-                .setCustomId('modal_full_name')
-                .setTitle('الاسم الكامل')
-                .addComponents(
-                    new ActionRowBuilder().addComponents(
-                        new TextInputBuilder()
-                            .setCustomId('full_name')
-                            .setLabel('أدخل اسمك الكامل')
-                            .setStyle(TextInputStyle.Short)
-                            .setRequired(true)
-                    )
-                );
+                .setCustomId('full_name_modal')
+                .setTitle('الاسم الكامل');
+            
+            const fullNameInput = new TextInputBuilder()
+                .setCustomId('full_name_input')
+                .setLabel('الاسم الكامل')
+                .setStyle(TextInputStyle.Short)
+                .setRequired(true);
+            
+            const actionRow = new ActionRowBuilder().addComponents(fullNameInput);
+            modal.addComponents(actionRow);
+            
             await interaction.showModal(modal);
-            return;
-        }
-        
-        if (interaction.customId === 'set_gender') {
-            const genderMenu = new StringSelectMenuBuilder()
-                .setCustomId('select_gender')
-                .setPlaceholder('اختر الجنس')
-                .addOptions(withResetOption([
-                    { label: 'ذكر', value: 'ذكر' },
-                    { label: 'أنثى', value: 'أنثى' }
-                ]));
-            const row = new ActionRowBuilder().addComponents(genderMenu);
-            await interaction.reply({ content: 'اختر الجنس:', components: [row], ephemeral: true });
-            return;
-        }
-        
-        if (interaction.customId === 'set_city') {
-            const cityMenu = new StringSelectMenuBuilder()
-                .setCustomId('select_city')
-                .setPlaceholder('اختر مكان الولادة')
-                .addOptions(withResetOption([
-                    { label: 'لوس سانتوس', value: 'لوس سانتوس' },
-                    { label: 'بوليتو', value: 'بوليتو' },
-                    { label: 'ساندي شور', value: 'ساندي شور' }
-                ]));
-            const row = new ActionRowBuilder().addComponents(cityMenu);
-            await interaction.reply({ content: 'اختر مكان الولادة:', components: [row], ephemeral: true });
-            return;
-        }
-        
-        if (interaction.customId === 'set_birthdate') {
-            // قائمة السنوات
-            const years = Array.from({ length: 24 }, (_, i) => 1990 + i);
-            const yearMenu = new StringSelectMenuBuilder()
-                .setCustomId('select_year')
-                .setPlaceholder('اختر سنة الميلاد')
-                .addOptions(withResetOption(years.map(y => ({ label: y.toString(), value: y.toString() }))));
-            const row = new ActionRowBuilder().addComponents(yearMenu);
-            await interaction.reply({ content: 'اختر سنة الميلاد:', components: [row], ephemeral: true });
-            return;
-        }
-        
-        if (interaction.customId === 'finish_identity') {
+        } else if (interaction.customId === 'set_gender') {
+            const modal = new ModalBuilder()
+                .setCustomId('gender_modal')
+                .setTitle('الجنس');
+            
+            const genderInput = new TextInputBuilder()
+                .setCustomId('gender_input')
+                .setLabel('الجنس')
+                .setStyle(TextInputStyle.Short)
+                .setRequired(true);
+            
+            const actionRow = new ActionRowBuilder().addComponents(genderInput);
+            modal.addComponents(actionRow);
+            
+            await interaction.showModal(modal);
+        } else if (interaction.customId === 'set_city') {
+            const modal = new ModalBuilder()
+                .setCustomId('city_modal')
+                .setTitle('مكان الولادة');
+            
+            const cityInput = new TextInputBuilder()
+                .setCustomId('city_input')
+                .setLabel('مكان الولادة')
+                .setStyle(TextInputStyle.Short)
+                .setRequired(true);
+            
+            const actionRow = new ActionRowBuilder().addComponents(cityInput);
+            modal.addComponents(actionRow);
+            
+            await interaction.showModal(modal);
+        } else if (interaction.customId === 'set_birthdate') {
+            const modal = new ModalBuilder()
+                .setCustomId('birthdate_modal')
+                .setTitle('تاريخ الميلاد');
+            
+            const yearInput = new TextInputBuilder()
+                .setCustomId('year_input')
+                .setLabel('السنة')
+                .setStyle(TextInputStyle.Short)
+                .setRequired(true);
+            
+            const monthInput = new TextInputBuilder()
+                .setCustomId('month_input')
+                .setLabel('الشهر')
+                .setStyle(TextInputStyle.Short)
+                .setRequired(true);
+            
+            const dayInput = new TextInputBuilder()
+                .setCustomId('day_input')
+                .setLabel('اليوم')
+                .setStyle(TextInputStyle.Short)
+                .setRequired(true);
+            
+            const actionRow1 = new ActionRowBuilder().addComponents(yearInput);
+            const actionRow2 = new ActionRowBuilder().addComponents(monthInput);
+            const actionRow3 = new ActionRowBuilder().addComponents(dayInput);
+            modal.addComponents(actionRow1, actionRow2, actionRow3);
+            
+            await interaction.showModal(modal);
+        } else if (interaction.customId === 'finish_identity') {
             if (!isIdentityComplete(data)) {
-                await interaction.reply({ content: 'يرجى تعبئة جميع البيانات أولاً.', ephemeral: true });
+                await interaction.reply({ content: '❌ يرجى تعبئة جميع البيانات قبل الإنهاء.', ephemeral: true });
                 return;
             }
-            // حفظ الهوية
+            
             const nationalId = generateNationalId();
-            identities[nationalId] = { ...data, userId, nationalId };
-            saveIdentities(identities);
-            // إرسال للوق
-            const logChannel = config.logChannelId && interaction.guild.channels.cache.get(config.logChannelId);
-            if (logChannel) {
-                const embed = new EmbedBuilder()
-                    .setTitle('بطاقة هوية جديدة')
-                    .setColor('#0099ff')
-                    .setImage(IMAGE_URL)
-                    .addFields(
-                        { name: 'الاسم الكامل', value: data.fullName, inline: false },
-                        { name: 'الجنس', value: data.gender, inline: true },
-                        { name: 'تاريخ الميلاد', value: `${data.day.padStart(2, '0')}/${convertArabicMonthToNumber(data.month)}/${data.year}`, inline: true },
-                        { name: 'مكان الولادة', value: data.city, inline: true },
-                        { name: 'الرقم الوطني', value: nationalId, inline: true },
-                        { name: 'أنشئت بواسطة', value: `<@${userId}>`, inline: false }
-                    )
-                    .setTimestamp();
-                await logChannel.send({ embeds: [embed] });
-            }
-            // الرد بشكل مؤجل
-            await interaction.deferReply({ ephemeral: true });
-            // إرسال DM بعد الرد
-            try {
-                await interaction.user.send(`تم إنشاء هويتك بنجاح! رقم هويتك الوطني: **${nationalId}**`);
-            } catch {}
-            await interaction.editReply({ content: '✅ تم إنشاء الهوية بنجاح!' });
+            userNationalIds.set(userId, nationalId);
+            
+            const embed = new EmbedBuilder()
+                .setTitle('هويتك الوطنية')
+                .setDescription(`الاسم الكامل: ${data.fullName}\nالجنس: ${data.gender}\nمكان الولادة: ${data.city}\nتاريخ الميلاد: ${data.day}/${data.month}/${data.year}\nالرقم الوطني: ${nationalId}`)
+                .setColor('#0099ff')
+                .setImage(getCustomImage(interaction.guildId));
+            
+            await interaction.reply({ embeds: [embed] });
             userData.delete(userId);
-            return;
-        }
-        
-        // التعامل مع زر الأيام 25-31
-        if (interaction.customId === 'more_days') {
-            const userId = interaction.user.id;
-            const data = userData.get(userId) || {};
-            
-            const moreDays = Array.from({ length: 7 }, (_, i) => (i + 25).toString());
-            const dayMenu = new StringSelectMenuBuilder()
-                .setCustomId('select_day')
-                .setPlaceholder('اختر يوم الميلاد (25-31)')
-                .addOptions(withResetOption(moreDays.map(d => ({ label: d, value: d }))));
-            const row = new ActionRowBuilder().addComponents(dayMenu);
-            
-            // زر العودة للأيام 1-24
-            const backButton = new ButtonBuilder()
-                .setCustomId('back_to_days_1_24')
-                .setLabel('الأيام 1-24')
-                .setStyle(ButtonStyle.Secondary);
-            const buttonRow = new ActionRowBuilder().addComponents(backButton);
-            
-            await interaction.update({ 
-                content: 'اختر يوم الميلاد:', 
-                components: [row, buttonRow], 
-                ephemeral: true 
-            });
-            return;
-        }
-        
-        // التعامل مع زر العودة للأيام 1-24
-        if (interaction.customId === 'back_to_days_1_24') {
-            const userId = interaction.user.id;
-            const data = userData.get(userId) || {};
-            
-            const days = Array.from({ length: 24 }, (_, i) => (i + 1).toString());
-            const dayMenu = new StringSelectMenuBuilder()
-                .setCustomId('select_day')
-                .setPlaceholder('اختر يوم الميلاد (1-24)')
-                .addOptions(withResetOption(days.map(d => ({ label: d, value: d }))));
-            const row = new ActionRowBuilder().addComponents(dayMenu);
-            
-            // إضافة زر للوصول للأيام 25-31
-            const moreDaysButton = new ButtonBuilder()
-                .setCustomId('more_days')
-                .setLabel('الأيام 25-31')
-                .setStyle(ButtonStyle.Secondary);
-            const buttonRow = new ActionRowBuilder().addComponents(moreDaysButton);
-            
-            await interaction.update({ 
-                content: 'اختر يوم الميلاد:', 
-                components: [row, buttonRow], 
-                ephemeral: true 
-            });
-            return;
         }
     }
+
+    // معالجة النماذج
+    if (interaction.isModalSubmit()) {
+        const userId = interaction.user.id;
+        const data = userData.get(userId) || {};
+        
+        if (interaction.customId === 'full_name_modal') {
+            data.fullName = interaction.fields.getTextInputValue('full_name_input');
+        } else if (interaction.customId === 'gender_modal') {
+            data.gender = interaction.fields.getTextInputValue('gender_input');
+        } else if (interaction.customId === 'city_modal') {
+            data.city = interaction.fields.getTextInputValue('city_input');
+        } else if (interaction.customId === 'birthdate_modal') {
+            data.year = interaction.fields.getTextInputValue('year_input');
+            data.month = convertArabicMonthToNumber(interaction.fields.getTextInputValue('month_input'));
+            data.day = interaction.fields.getTextInputValue('day_input');
+        }
+        
+        userData.set(userId, data);
+        
+        const embed = new EmbedBuilder()
+            .setTitle('من هنا تنشئ هويتك الوطنية')
+            .setDescription('يرجى تعبئة جميع البيانات عبر الأزرار أدناه:')
+            .setColor('#0099ff')
+            .setImage(getCustomImage(interaction.guildId));
+        
+        const row = buildStepButtons(data);
+        const rightsButton = createRightsButton();
+        
+        let components = [row];
+        if (rightsButton) {
+            const rightsRow = new ActionRowBuilder().addComponents(rightsButton);
+            components.push(rightsRow);
+        }
+        
+        await interaction.update({ embeds: [embed], components: components });
+    }
+});
 
     // استقبال مودال تعديل الهوية
     if (interaction.type === InteractionType.ModalSubmit && interaction.customId === 'edit_identity_modal') {
@@ -4086,19 +4038,18 @@ client.on(Events.InteractionCreate, async interaction => {
         } catch (error) {
             console.error('خطأ في تحديث صور جدول العسكريين:', error);
         }
-                    return;
-                }
-                
+    }
+
     // استقبال مودال تعديل الكود العسكري
     if (interaction.type === InteractionType.ModalSubmit && interaction.customId.startsWith('edit_military_code_modal_')) {
         // تحقق من البريميوم
         if (!premium[interaction.guildId]) {
-                    await interaction.reply({ 
+            await interaction.reply({ 
                 content: '❌ هذا الأمر اشتراك بريميوم يرجى التواصل مع أحد المطورين للاشتراك:\n<@1337512375355707412> <@1070609053065154631> <@1291805249815711826> <@1319791882389164072>', 
-                        ephemeral: true 
-                    });
-                    return;
-                }
+                ephemeral: true 
+            });
+            return;
+        }
         
         const nationalId = interaction.customId.split('_')[4];
         const newCode = interaction.fields.getTextInputValue('new_military_code');
@@ -4127,9 +4078,8 @@ client.on(Events.InteractionCreate, async interaction => {
             content: `✅ تم تعديل الكود العسكري للعسكري **${member.fullName}** بنجاح!\n**الكود القديم:** ${oldCode}\n**الكود الجديد:** ${newCode}`, 
             ephemeral: true 
         });
-            return;
-        }
-        
+    }
+
     // استقبال مودال إضافة نقاط
     if (interaction.type === InteractionType.ModalSubmit && interaction.customId.startsWith('add_points_modal_')) {
         // تحقق من البريميوم
@@ -4138,9 +4088,9 @@ client.on(Events.InteractionCreate, async interaction => {
                 content: '❌ هذا الأمر اشتراك بريميوم يرجى التواصل مع أحد المطورين للاشتراك:\n<@1337512375355707412> <@1070609053065154631> <@1291805249815711826> <@1319791882389164072>', 
                 ephemeral: true 
             });
-                return;
-            }
-            
+            return;
+        }
+        
         const nationalId = interaction.customId.split('_')[3];
         const pointsToAdd = parseInt(interaction.fields.getTextInputValue('points_to_add'));
         const reason = interaction.fields.getTextInputValue('add_reason');
@@ -4148,8 +4098,8 @@ client.on(Events.InteractionCreate, async interaction => {
         
         if (!member) {
             await interaction.reply({ content: '❌ لم يتم العثور على العسكري المحدد.', ephemeral: true });
-                    return;
-                }
+            return;
+        }
         
         if (isNaN(pointsToAdd) || pointsToAdd <= 0) {
             await interaction.reply({ content: '❌ يرجى إدخال عدد صحيح موجب من النقاط.', ephemeral: true });
@@ -4174,7 +4124,6 @@ client.on(Events.InteractionCreate, async interaction => {
             content: `✅ تم إضافة **${pointsToAdd}** نقاط للعسكري **${member.fullName}** بنجاح!\n**النقاط السابقة:** ${oldPoints}\n**النقاط الجديدة:** ${member.points}\n**السبب:** ${reason}`, 
             ephemeral: true 
         });
-        return;
     }
 
     // استقبال مودال خصم نقاط
@@ -4221,8 +4170,8 @@ client.on(Events.InteractionCreate, async interaction => {
             content: `✅ تم خصم **${pointsToRemove}** نقاط من العسكري **${member.fullName}** بنجاح!\n**النقاط السابقة:** ${oldPoints}\n**النقاط الجديدة:** ${member.points}\n**السبب:** ${reason}`, 
             ephemeral: true 
         });
-        return;
     }
+
     // التعامل مع اختيار عسكري من قائمة الإدارة
     if (interaction.isStringSelectMenu() && interaction.customId.startsWith('manage_military_member_page_')) {
         // تحقق من البريميوم
@@ -4231,19 +4180,19 @@ client.on(Events.InteractionCreate, async interaction => {
                 content: '❌ هذا الأمر اشتراك بريميوم يرجى التواصل مع أحد المطورين للاشتراك:\n<@1337512375355707412> <@1070609053065154631> <@1291805249815711826> <@1319791882389164072>', 
                 ephemeral: true 
             });
-                return;
-            }
-            
+            return;
+        }
+        
         const nationalId = interaction.values[0];
         const member = identities[nationalId];
         
         if (!member) {
             await interaction.reply({ content: '❌ لم يتم العثور على العسكري المحدد.', ephemeral: true });
-                    return;
-                }
+            return;
+        }
         
         // إنشاء إمبيد بمعلومات العسكري
-                const embed = new EmbedBuilder()
+        const embed = new EmbedBuilder()
             .setTitle(`معلومات العسكري: ${member.fullName}`)
             .setColor('#3498db')
             .addFields(
@@ -4257,7 +4206,7 @@ client.on(Events.InteractionCreate, async interaction => {
                 { name: 'صاحب الهوية', value: `<@${member.userId}>`, inline: true },
                 { name: 'الحالة', value: member.policeStatus || 'غير محدد', inline: true }
             )
-                    .setImage(getCustomImage(interaction.guildId))
+            .setImage(getCustomImage(interaction.guildId))
             .setTimestamp();
         
         // زر تعديل الكود العسكري
@@ -4269,7 +4218,6 @@ client.on(Events.InteractionCreate, async interaction => {
         const row = new ActionRowBuilder().addComponents(editButton);
         
         await interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
-        return;
     }
 
     // التعامل مع اختيار عسكري من قائمة إدارة النقاط
@@ -4295,7 +4243,7 @@ client.on(Events.InteractionCreate, async interaction => {
         const embed = new EmbedBuilder()
             .setTitle(`إدارة نقاط العسكري: ${member.fullName}`)
             .setColor('#f39c12')
-                    .addFields(
+            .addFields(
                 { name: 'الاسم الكامل', value: member.fullName, inline: true },
                 { name: 'الكود العسكري', value: member.policeCode || 'غير محدد', inline: true },
                 {name: 'النقاط الحالية', value: `${member.points || 0} نقطة`, inline: true },
@@ -4323,7 +4271,6 @@ client.on(Events.InteractionCreate, async interaction => {
         const row = new ActionRowBuilder().addComponents(addPointsButton, removePointsButton);
         
         await interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
-        return;
     }
 
     // التعامل مع زر تعديل الكود العسكري
@@ -4361,9 +4308,8 @@ client.on(Events.InteractionCreate, async interaction => {
             );
         
         await interaction.showModal(modal);
-                return;
-            }
-            
+    }
+
     // التعامل مع زر إضافة نقاط
     if (interaction.isButton() && interaction.customId.startsWith('add_points_')) {
         // تحقق من البريميوم
@@ -4372,8 +4318,8 @@ client.on(Events.InteractionCreate, async interaction => {
                 content: '❌ هذا الأمر اشتراك بريميوم يرجى التواصل مع أحد المطورين للاشتراك:\n<@1337512375355707412> <@1070609053065154631> <@1291805249815711826> <@1319791882389164072>', 
                 ephemeral: true 
             });
-                    return;
-                }
+            return;
+        }
         
         const nationalId = interaction.customId.split('_')[2];
         const member = identities[nationalId];
@@ -4407,8 +4353,7 @@ client.on(Events.InteractionCreate, async interaction => {
             );
         
         await interaction.showModal(modal);
-                return;
-            }
+    }
 
     // التعامل مع زر خصم نقاط
     if (interaction.isButton() && interaction.customId.startsWith('remove_points_')) {
@@ -4453,19 +4398,18 @@ client.on(Events.InteractionCreate, async interaction => {
             );
         
         await interaction.showModal(modal);
-        return;
     }
 
     // التعامل مع القائمة المنسدلة لحالة العسكري
     if (interaction.isStringSelectMenu() && interaction.customId === 'police_status_select') {
         // تحقق من البريميوم
         if (!premium[interaction.guildId]) {
-                    await interaction.reply({ 
+            await interaction.reply({ 
                 content: '❌ هذا الأمر اشتراك بريميوم يرجى التواصل مع أحد المطورين للاشتراك:\n<@1337512375355707412> <@1070609053065154631> <@1291805249815711826> <@1319791882389164072>', 
-                        ephemeral: true 
-                    });
-                    return;
-                }
+                ephemeral: true 
+            });
+            return;
+        }
         
         // تحقق من رتبة الشرطة
         if (!config.militaryRoleId || !interaction.member.roles.cache.has(config.militaryRoleId)) {
@@ -4493,7 +4437,6 @@ client.on(Events.InteractionCreate, async interaction => {
         sendPoliceLog(interaction, 'status', identity.fullName, 'تغيير حالة عسكري', `تم تغيير حالة العسكري من ${oldStatus || 'غير محدد'} إلى ${statusText}`, null, statusText, null);
         
         await showPoliceStatusEmbed(interaction, identity, status, false, true);
-        return;
     }
 
     // التعامل مع زر حذف الجريمة
@@ -4560,7 +4503,7 @@ client.on(Events.InteractionCreate, async interaction => {
             
             crimeOptions.push({ label: 'إعادة تعيين', value: 'reset' });
             
-                const selectMenu = new StringSelectMenuBuilder()
+            const selectMenu = new StringSelectMenuBuilder()
                 .setCustomId(`manage_crime_${nationalId}`)
                 .setPlaceholder('اختر جريمة لإدارتها')
                 .addOptions(crimeOptions);
@@ -4583,9 +4526,7 @@ client.on(Events.InteractionCreate, async interaction => {
             
             await interaction.update({ embeds: [embed], components: [row, buttonRow], ephemeral: true });
         }
-        return;
     }
-
 }
 
 // دالة إرسال لوق الجرائم والمخالفات
